@@ -1,10 +1,9 @@
 package Return::Value;
-# $Id: Value.pm,v 1.1.1.1 2004/08/30 23:30:40 rjbs Exp $
 # vi:et:sw=4 ts=4
 use strict;
 
 use vars qw[$VERSION @EXPORT];
-$VERSION = '1.22';
+$VERSION = '1.24';
 @EXPORT  = qw[success failure];
 
 use base qw[Exporter];
@@ -12,6 +11,12 @@ use base qw[Exporter];
 =head1 NAME
 
 Return::Value - Polymorphic Return Values
+
+=head1 VERSION
+
+version 1.24
+
+ $Id: Value.pm,v 1.3 2004/09/23 13:08:59 rjbs Exp $
 
 =head1 SYNOPSIS
 
@@ -55,15 +60,15 @@ Return::Value - Polymorphic Return Values
 
 =head1 DESCRIPTION
 
-Polymorphic return values are really useful. Often, we just want to know if
-something worked or not. Other times, we'd like to know what the error text
-was. Still others, we may want to know what the error code was, and what the
-error properties were. We don't want to handle objects or data structures for
+Polymorphic return values are really useful.  Often, we just want to know if
+something worked or not.  Other times, we'd like to know what the error text
+was.  Still others, we may want to know what the error code was, and what the
+error properties were.  We don't want to handle objects or data structures for
 every single return value, but we do want to check error conditions in our code
 because that's what good programmers do.
 
 When functions are successful they may return true, or perhaps some useful
-data. In the quest to provide consistent return values, this gets confusing
+data.  In the quest to provide consistent return values, this gets confusing
 between complex, informational errors and successful return values.
 
 This module provides these features with a simple API that should get you what
@@ -86,8 +91,8 @@ whether the value is returning success or failure.
 =item errno
 
 The errno attribute stores the error number of the return value.  For
-failure-type results, it defaults to 1; for success-type results, it is by
-default undefined.
+success-type results, it is by default undefined.  For other results, it
+defaults to 1.
 
 =item string
 
@@ -107,14 +112,20 @@ the data attribute, though, these structures must be retrived via method calls.
 
 =back
 
-=head2 Functions
+=head1 FUNCTIONS
 
 The functional interface is highly recommended for use within functions
-that are using C<Return::Value> for return values.
+that are using C<Return::Value> for return values.  It's simple and
+straightforward, and builds the entire return value in one statement.
 
 =over 4
 
 =cut
+
+# This hack probably impacts performance more than I'd like to know, but it's
+# needed to have a hashref object that can deref into a different hash.
+# _ah($self,$key, [$value) sets or returns the value for the given key on the
+# $self blessed-ref
 
 sub _ah {
     my ($self, $key, $value) = @_;
@@ -127,17 +138,28 @@ sub _ah {
 }
 
 sub _builder {
-    my %args = (type => shift, string => (shift || ''), @_);
-    $args{errno} ||= $args{type} eq 'success' ? undef : 1;
+    my %args = (type => shift);
+    $args{string} = shift if (@_ % 2);
+    %args = (%args, @_);
+
+    $args{string} = $args{type} unless defined $args{string};
+
+    $args{errno}  = ($args{type} eq 'success' ? undef : 1)
+        unless defined $args{errno};
+
     __PACKAGE__->new(%args);
 }
 
-=item success
+=item C<< success >>
 
-The C<success> function returns a C<Return::Value> with the type "success"
+The C<success> function returns a C<Return::Value> with the type "success".
 
 Additional named parameters may be passed to set the returned object's
-attributes.
+attributes.  The first, optional, parameter is the string attribute and does
+not need to be named.  All other parameters must be passed by name.
+
+ # simplest possible case
+ return success;
 
 =cut
 
@@ -145,7 +167,7 @@ sub success { _builder('success', @_) }
 
 =pod
 
-=item failure
+=item C<< failure >>
 
 C<failure> is identical to C<success>, but returns an object with the type
 "failure"
@@ -272,7 +294,7 @@ passed.
 =cut
 
 use overload
-    '""'   => sub { shift->string },
+    '""'   => sub { shift->string  },
     'bool' => sub { shift->bool ? 1 : undef },
     '=='   => sub { shift->bool   == shift },
     '!='   => sub { shift->bool   != shift },

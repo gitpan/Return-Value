@@ -1,5 +1,4 @@
-
-use Test::More 'no_plan';
+use Test::More tests => 31;
 use strict;
 use warnings;
 
@@ -47,4 +46,28 @@ BEGIN { $class = 'Return::Value'; use_ok($class); }
 
 	is(ref $value->data,   'ARRAY',    "failure value includes hashref");
 	is($value->[1],        'sunspots', "failure value derefs correctly");
+}
+
+{
+	my $value = failure errno => 501, data => [ cause => 'sunspots' ];
+
+	isa_ok($value, $class, "failure value");
+
+	ok(not($value),          "failure value is false");
+	ok($value == 0,          "failure value is 0");
+	ok($value eq 'failure',  "failure value has default stringification");
+	is($value->errno, 501,   "failure value has 501 errno");
+
+	is(ref $value->data,   'ARRAY',    "failure value includes hashref");
+	is($value->[1],        'sunspots', "failure value derefs correctly");
+}
+
+{
+	my $value = failure;
+
+	isa_ok($value, $class, "failure value");
+
+	ok(not($value),          "failure value is true");
+	ok($value == 0,          "failure value is 0");
+	ok($value eq 'failure',  "failure has default stringification");
 }

@@ -1,3 +1,3 @@
-use Test::More qw[no_plan];
+use Test::More tests => 1;
 
-use_ok 'Return::Value';
+BEGIN { use_ok 'Return::Value'; }
