@@ -3,7 +3,7 @@ package Return::Value;
 use strict;
 
 use vars qw[$VERSION @EXPORT];
-$VERSION = '1.26';
+$VERSION = '1.28';
 @EXPORT  = qw[success failure];
 
 use base qw[Exporter];
@@ -14,9 +14,9 @@ Return::Value - Polymorphic Return Values
 
 =head1 VERSION
 
-version 1.26
+version 1.28
 
- $Id: Value.pm,v 1.4 2004/12/20 20:57:30 rjbs Exp $
+ $Id: Value.pm,v 1.5 2005/01/06 17:15:09 rjbs Exp $
 
 =head1 SYNOPSIS
 
@@ -295,7 +295,7 @@ passed.
 
 use overload
     '""'   => sub { shift->string  },
-    'bool' => sub { shift->bool ? 1 : undef },
+    'bool' => sub { shift->bool },
     '=='   => sub { shift->bool   == shift },
     '!='   => sub { shift->bool   != shift },
     '>'    => sub { shift->bool   >  shift },

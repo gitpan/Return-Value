@@ -17,10 +17,10 @@ ok failure() < 1 && failure() > -1 && failure() == 0, 'failure is zero';
 my $fail = failure;
 
 $fail++;
-ok $fail, 'failure to success';
+ok $fail, 'failure to success (success is true)';
 
 $fail--;
-ok ! $fail, 'success to failure';
+ok ! $fail, 'success to failure (failure is false)';
 
 cmp_ok($fail, '==', 0,  "failure is == 0");
 cmp_ok($fail, '!=', 1,  "failure is != 1");
