@@ -3,7 +3,7 @@ package Return::Value;
 use strict;
 
 use vars qw[$VERSION @EXPORT];
-$VERSION = '1.24';
+$VERSION = '1.26';
 @EXPORT  = qw[success failure];
 
 use base qw[Exporter];
@@ -14,9 +14,9 @@ Return::Value - Polymorphic Return Values
 
 =head1 VERSION
 
-version 1.24
+version 1.26
 
- $Id: Value.pm,v 1.3 2004/09/23 13:08:59 rjbs Exp $
+ $Id: Value.pm,v 1.4 2004/12/20 20:57:30 rjbs Exp $
 
 =head1 SYNOPSIS
 
@@ -131,7 +131,7 @@ sub _ah {
     my ($self, $key, $value) = @_;
     my $class = ref $self;
     bless $self => "ain't::overloaded";
-    $self->{$key} = $value if defined $value;
+    $self->{$key} = $value if @_ > 2;
     my $return = $self->{$key};
     bless $self => $class;
     return $return;

@@ -1,4 +1,4 @@
-use Test::More tests => 22;
+use Test::More tests => 24;
 use strict;
 $^W = 1;
 
@@ -23,6 +23,8 @@ $ret = Return::Value->new(
 isa_ok $ret, 'Return::Value';
 ok $ret->bool, 'true';
 is $ret->errno, 128, 'errno 128';
+is $ret->errno(undef), undef, 'errno undef';
+is $ret->errno,        undef, 'errno still undef';
 is $ret->string, 'string', 'string is string';
 is ref($ret->data), 'ARRAY', 'data array ref';
 is scalar(@{$ret->data}), 1, 'one element in data';

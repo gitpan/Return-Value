@@ -1,6 +1,6 @@
 use Test::More tests => 31;
 use strict;
-use warnings;
+$^W = 1;
 
 my $class;
 
