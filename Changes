@@ -1,3 +1,8 @@
+1.20   2004-08-30	19:25
+	* array and hash dereference will get the return data
+	* full test coverage
+	* 'type' attribute is key to success/failure
+	* POD improved
 1.1    2004-07-15
 
   - Initial Revision.

@@ -1,9 +1,10 @@
 package Return::Value;
-# $Id: Value.pm,v 1.1 2004/07/15 18:04:48 cwest Exp $
+# $Id: Value.pm,v 1.1.1.1 2004/08/30 23:30:40 rjbs Exp $
+# vi:et:sw=4 ts=4
 use strict;
 
 use vars qw[$VERSION @EXPORT];
-$VERSION = (qw$Revision: 1.1 $)[1];
+$VERSION = '1.22';
 @EXPORT  = qw[success failure];
 
 use base qw[Exporter];
@@ -54,46 +55,104 @@ Return::Value - Polymorphic Return Values
 
 =head1 DESCRIPTION
 
-Polymorphic return values are really useful. Often, we just want to know
-if something worked or not. Other times, we'd like to know what the error
-text was. Still others, we may want to know what the error code was, and
-what the error properties were. We don't want to handle objects or
-data structures for every single return value, but we do want to check
-error conditions in our code because that's what good programmers do.
+Polymorphic return values are really useful. Often, we just want to know if
+something worked or not. Other times, we'd like to know what the error text
+was. Still others, we may want to know what the error code was, and what the
+error properties were. We don't want to handle objects or data structures for
+every single return value, but we do want to check error conditions in our code
+because that's what good programmers do.
 
 When functions are successful they may return true, or perhaps some useful
 data. In the quest to provide consistent return values, this gets confusing
 between complex, informational errors and successful return values.
 
-This module provides these features with a simple API that should get you
-what you're looking for in each contex a return value is used in.
+This module provides these features with a simple API that should get you what
+you're looking for in each contex a return value is used in.
+
+=head2 Attributes
+
+All return values have a set of attributes that package up the information
+returned.  All attributes can be accessed or changed via methods of the same
+name, unless otherwise noted.  Many can also be accessed via overloaded
+operations on the object, as noted below.
+
+=over 4
+
+=item type
+
+A value's type is either "success" or "failure" and (obviously) reflects
+whether the value is returning success or failure.
+
+=item errno
+
+The errno attribute stores the error number of the return value.  For
+failure-type results, it defaults to 1; for success-type results, it is by
+default undefined.
+
+=item string
+
+The value's string attribute is a simple message describing the value.
+
+=item data
+
+The data attribute stores a reference to a hash or array, and can be used as a
+simple way to return extra data.  Data stored in the data attribute can be
+accessed by dereferencing the return value itself.  (See below.)
+
+=item prop
+
+The most generic attribute of all, prop is a hashref that can be used to pass
+an arbitrary number of data structures, just like the data attribute.  Unlike
+the data attribute, though, these structures must be retrived via method calls.
+
+=back
 
 =head2 Functions
 
 The functional interface is highly recommended for use within functions
-that are using C<Return::Value>s.
+that are using C<Return::Value> for return values.
 
 =over 4
 
+=cut
+
+sub _ah {
+    my ($self, $key, $value) = @_;
+    my $class = ref $self;
+    bless $self => "ain't::overloaded";
+    $self->{$key} = $value if defined $value;
+    my $return = $self->{$key};
+    bless $self => $class;
+    return $return;
+}
+
+sub _builder {
+    my %args = (type => shift, string => (shift || ''), @_);
+    $args{errno} ||= $args{type} eq 'success' ? undef : 1;
+    __PACKAGE__->new(%args);
+}
+
 =item success
+
+The C<success> function returns a C<Return::Value> with the type "success"
+
+Additional named parameters may be passed to set the returned object's
+attributes.
 
 =cut
 
-sub success {
-    my ($string, @args) = @_;
-    return __PACKAGE__->new(string => $string, bool => 1, @args);
-}
+sub success { _builder('success', @_) }
 
 =pod
 
 =item failure
 
+C<failure> is identical to C<success>, but returns an object with the type
+"failure"
+
 =cut
 
-sub failure {
-    my ($string, @args) = @_;
-    return __PACKAGE__->new(string => $string, bool => 0, @args);
-}
+sub failure { _builder('failure', @_) }
 
 =pod
 
@@ -108,39 +167,21 @@ The object API is useful in code that is catching C<Return::Value> objects.
 =item new
 
   my $return = Return::Value->new(
-      bool   => 0,
+      type   => 'failure',
       string => "YOU FAIL",
       prop   => {
           failed_objects => \@objects,
       },
   );
 
-Creates a new C<Return::Value> object. You can set the following
-options.
-
-C<bool>, the boolean representation of the result. Defaults to
-false.
-
-C<errno>, the error number. Defaults to C<1> or C<0> based on the
-value of C<bool>.
-
-C<string>, the string representation of the result.
-
-C<data>, data associated with the result, usually for success.
-
-C<prop>, properties assigned to the result.
+Creates a new C<Return::Value> object.  Named parameters can be used to set the
+object's attributes.
 
 =cut
 
 sub new {
-    my ($class, %args) = @_;
-    my $self = {};
-    $self->{bool}   = ($args{bool} ? 1 : 0 );
-    $self->{errno}  = $args{errno} || ($self->{bool} ? 1 : 0);
-    $self->{string} = (defined $args{string} ? $args{string} : '');
-    $self->{data}   = $args{data};
-    $self->{prop}   = $args{prop} || {};
-    return bless $self, $class;
+    my $class = shift;
+    bless { type => 'failure', string => '', prop => {}, @_ } => $class;
 }
 
 =pod
@@ -149,28 +190,7 @@ sub new {
 
   print "it worked" if $result->bool;
 
-Returns a boolean describing the result as success or failure.
-
-=item errno
-
-  print "it worked" if $result->errno == 0;
-
-Returns an errno for the result.
-
-=item string
-
-  print $result->string unless $result->bool;
-
-Returns a boolean describing the result as success or failure.
-
-=item data
-
-  if ( $result->bool ) {
-      my $data = $result->data;
-      print foreach @{$data};
-  }
-
-Returns the data structure passed to it.
+Returns the result in boolean context: true for success, false for failure.
 
 =item prop
 
@@ -182,21 +202,37 @@ Returns the return value's properties. Accepts the name of
 a property retured, or returns the properties hash reference
 if given no name.
 
+=item other attribute accessors
+
+Simple accessors exist for the object's other attributes: type, errno, string,
+and data.
+
 =cut
 
-foreach my $name ( qw[bool errno string data] ) {
+sub bool { _ah($_[0],'type') eq 'success' ? 1 : 0 }
+
+sub type {
+    my ($self, $value) = @_;
+    return _ah($self, 'type') unless @_ > 1;
+    die "invalid result type: $value"
+        unless $value eq 'success' or $value eq 'failure';
+    return _ah($self, 'type', $value);
+};
+
+foreach my $name ( qw[errno string data] ) {
     no strict 'refs';
     *{$name} = sub {
         my ($self, $value) = @_;
-        return $self->{$name} unless @_ > 1;
-        return $self->{$name} = $value;
+        return _ah($self, $name) unless @_ > 1;
+        return _ah($self, $name, $value);
     };
 }
+
 sub prop   {
     my ($self, $name, $value) = @_;
-    return $self->{prop}          unless $name;
-    return $self->{prop}->{$name} unless @_ > 2;
-    return $self->{prop}->{$name} = $value;
+    return _ah($self, 'prop')          unless $name;
+    return _ah($self, 'prop')->{$name} unless @_ > 2;
+    return _ah($self, 'prop')->{$name} = $value;
 }
 
 =pod
@@ -214,7 +250,7 @@ listed here.
 
   print "$result\n";
 
-Stringifies to the C<string> representation.
+Stringifies to the string attribute.
 
 =item Boolean
 
@@ -226,25 +262,52 @@ Returns the C<bool> representation.
 
 Also returns the C<bool> value.
 
+=item Dereference
+
+Dereferencing the value as a hash or array will return the value of the data
+attribute, if it matches that type, or an empty reference otherwise.  You can
+check C<<ref $result->data>> to determine what kind of data (if any) was
+passed.
+
 =cut
 
-use overload '""'   => sub { shift->string },
-             'bool' => sub { shift->bool ? 1 : undef },
-             '=='   => sub { shift->bool   == shift },
-             '!='   => sub { shift->bool   != shift },
-             '>'    => sub { shift->bool   >  shift },
-             '<'    => sub { shift->bool   <  shift },
-             'eq'   => sub { shift->string == shift },
-             'ne'   => sub { shift->string != shift },
-             'gt'   => sub { shift->string >  shift },
-             'lt'   => sub { shift->string <  shift },
-             '++'   => sub { shift->bool(1) },
-             '--'   => sub { shift->bool(0) },
-             fallback => 1;
+use overload
+    '""'   => sub { shift->string },
+    'bool' => sub { shift->bool ? 1 : undef },
+    '=='   => sub { shift->bool   == shift },
+    '!='   => sub { shift->bool   != shift },
+    '>'    => sub { shift->bool   >  shift },
+    '<'    => sub { shift->bool   <  shift },
+    'eq'   => sub { shift->string eq shift },
+    'ne'   => sub { shift->string ne shift },
+    'gt'   => sub { shift->string gt shift },
+    'lt'   => sub { shift->string lt shift },
+    '++'   => sub { _ah(shift,'type','success') },
+    '--'   => sub { _ah(shift,'type','failure') },
+    '${}'  => sub { my $data = _ah($_[0],'data'); $data ? \$data : \undef },
+    '%{}'  => sub { ref _ah($_[0],'data') eq 'HASH'  ? _ah($_[0],'data') : {} },
+    '@{}'  => sub { ref _ah($_[0],'data') eq 'ARRAY' ? _ah($_[0],'data') : [] },
+    fallback => 1;
 
 =pod
 
 =back
+
+=head1 TODO
+
+No plans!
+
+=head1 AUTHORS
+
+Casey West, <F<casey@geeknest.com>>.
+
+Ricardo Signes, <F<rjbs@cpan.org>>.
+
+=head1 COPYRIGHT
+
+  Copyright (c) 2004 Casey West and Ricardo SIGNES.  All rights reserved.
+  This module is free software; you can redistribute it and/or modify it
+  under the same terms as Perl itself.
 
 =cut
 
