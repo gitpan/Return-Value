@@ -1,12 +1,14 @@
+use strict;
+## no critic RequireUseWarnings
 package Return::Value;
 # vi:et:sw=4 ts=4
-use strict;
 
-use vars qw[$VERSION @EXPORT];
-$VERSION = '1.301';
+use vars qw[$VERSION @EXPORT];  ## no critic Export
+$VERSION = '1.302';
 @EXPORT  = qw[success failure];
 
 use base qw[Exporter];
+use Carp ();
 
 =head1 NAME
 
@@ -14,9 +16,9 @@ Return::Value - Polymorphic Return Values
 
 =head1 VERSION
 
-version 1.30
+version 1.302
 
- $Id: Value.pm,v 1.5 2005/01/06 17:15:09 rjbs Exp $
+ $Id: /my/cs/projects/return/trunk/lib/Return/Value.pm 28007 2006-11-14T22:21:03.864745Z rjbs  $
 
 =head1 SYNOPSIS
 
@@ -207,7 +209,7 @@ object's attributes.
 
 sub new {
     my $class = shift;
-    bless { type => 'failure', string => '', prop => {}, @_ } => $class;
+    bless { type => 'failure', string => q{}, prop => {}, @_ } => $class;
 }
 
 =pod
@@ -240,12 +242,13 @@ sub bool { _ah($_[0],'type') eq 'success' ? 1 : 0 }
 sub type {
     my ($self, $value) = @_;
     return _ah($self, 'type') unless @_ > 1;
-    die "invalid result type: $value"
+    Carp::croak "invalid result type: $value"
         unless $value eq 'success' or $value eq 'failure';
     return _ah($self, 'type', $value);
 };
 
 foreach my $name ( qw[errno string data] ) {
+    ## no critic (ProhibitNoStrict)
     no strict 'refs';
     *{$name} = sub {
         my ($self, $value) = @_;
@@ -254,7 +257,7 @@ foreach my $name ( qw[errno string data] ) {
     };
 }
 
-sub prop   {
+sub prop {
     my ($self, $name, $value) = @_;
     return _ah($self, 'prop')          unless $name;
     return _ah($self, 'prop')->{$name} unless @_ > 2;
@@ -331,9 +334,9 @@ Ricardo Signes, <F<rjbs@cpan.org>>.
 
 =head1 COPYRIGHT
 
-  Copyright (c) 2004 Casey West and Ricardo SIGNES.  All rights reserved.
-  This module is free software; you can redistribute it and/or modify it
-  under the same terms as Perl itself.
+  Copyright (c) 2004-2006 Casey West and Ricardo SIGNES.  All rights reserved.
+  This module is free software; you can redistribute it and/or modify it under
+  the same terms as Perl itself.
 
 =cut
 

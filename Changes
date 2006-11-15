@@ -1,3 +1,7 @@
+1.302  2006-11-14
+       perl-critic tests
+       croak, not die, on invalid constructor input
+
 1.301  2006-07-28
        fix typoes in changelog and docs
        improve test coverage
