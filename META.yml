@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Return-Value
-version:            1.666000
+version:            1.666001
 abstract:           Polymorphic Return Values
 author:
     - Casey West <casey@geeknest.com>
