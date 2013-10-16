@@ -1,47 +1,118 @@
 use strict;
-## no critic RequireUseWarnings
+use warnings;
 package Return::Value;
+{
+  $Return::Value::VERSION = '1.666003';
+}
 # vi:et:sw=4 ts=4
 
-use vars qw[$VERSION @EXPORT $NO_CLUCK];  ## no critic Export
-$VERSION = '1.666002';
-@EXPORT  = qw[success failure];
-
-use base qw[Exporter];
+use Exporter 5.57 'import';
 use Carp ();
 
-Carp::cluck "Return::Value is deprecated" unless $NO_CLUCK;
+our @EXPORT  = qw[success failure];
+
+
+# This hack probably impacts performance more than I'd like to know, but it's
+# needed to have a hashref object that can deref into a different hash.
+# _ah($self,$key, [$value) sets or returns the value for the given key on the
+# $self blessed-ref
+
+sub _ah {
+    my ($self, $key, $value) = @_;
+    my $class = ref $self;
+    bless $self => "ain't::overloaded";
+    $self->{$key} = $value if @_ > 2;
+    my $return = $self->{$key};
+    bless $self => $class;
+    return $return;
+}
+
+sub _builder {
+    my %args = (type => shift);
+    $args{string} = shift if (@_ % 2);
+    %args = (%args, @_);
+
+    $args{string} = $args{type} unless defined $args{string};
+
+    $args{errno}  = ($args{type} eq 'success' ? undef : 1)
+        unless defined $args{errno};
+
+    __PACKAGE__->new(%args);
+}
+
+
+sub success { _builder('success', @_) }
+
+
+sub failure { _builder('failure', @_) }
+
+
+sub new {
+    my $class = shift;
+    bless { type => 'failure', string => q{}, prop => {}, @_ } => $class;
+}
+
+
+sub bool { _ah($_[0],'type') eq 'success' ? 1 : 0 }
+
+sub type {
+    my ($self, $value) = @_;
+    return _ah($self, 'type') unless @_ > 1;
+    Carp::croak "invalid result type: $value"
+        unless $value eq 'success' or $value eq 'failure';
+    return _ah($self, 'type', $value);
+};
+
+foreach my $name ( qw[errno string data] ) {
+    ## no critic (ProhibitNoStrict)
+    no strict 'refs';
+    *{$name} = sub {
+        my ($self, $value) = @_;
+        return _ah($self, $name) unless @_ > 1;
+        return _ah($self, $name, $value);
+    };
+}
+
+sub prop {
+    my ($self, $name, $value) = @_;
+    return _ah($self, 'prop')          unless $name;
+    return _ah($self, 'prop')->{$name} unless @_ > 2;
+    return _ah($self, 'prop')->{$name} = $value;
+}
+
+
+use overload
+    '""'   => sub { shift->string  },
+    'bool' => sub { shift->bool },
+    '=='   => sub { shift->bool   == shift },
+    '!='   => sub { shift->bool   != shift },
+    '>'    => sub { shift->bool   >  shift },
+    '<'    => sub { shift->bool   <  shift },
+    'eq'   => sub { shift->string eq shift },
+    'ne'   => sub { shift->string ne shift },
+    'gt'   => sub { shift->string gt shift },
+    'lt'   => sub { shift->string lt shift },
+    '++'   => sub { _ah(shift,'type','success') },
+    '--'   => sub { _ah(shift,'type','failure') },
+    '${}'  => sub { my $data = _ah($_[0],'data'); $data ? \$data : \undef },
+    '%{}'  => sub { ref _ah($_[0],'data') eq 'HASH'  ? _ah($_[0],'data') : {} },
+    '@{}'  => sub { ref _ah($_[0],'data') eq 'ARRAY' ? _ah($_[0],'data') : [] },
+    fallback => 1;
+
+
+"This return value is true.";
+
+__END__
+
+=pod
 
 =head1 NAME
 
-Return::Value - (deprecated) polymorphic return values
+Return::Value
 
 =head1 VERSION
 
-version 1.666001
-
-=head1 DO NOT USE THIS LIBRARY
-
-Return::Value was a bad idea.  i'm sorry that I had it, sorry that I followed
-through, and sorry that it got used in other useful libraries.  Fortunately
-there are not many things using it.  One of those things is
-L<Email::Send|Email::Send> which is also deprecated in favor of
-L<Email::Sender|Email::Sender>.
-
-There's no reason to specify a new module to replace Return::Value.  In
-general, routines should return values of uniform type or throw exceptions.
-Return::Value tried to be a uniform type for all routines, but has so much
-weird behavior that it ends up being confusing and not very Perl-like.
-
-Objects that are false are just a dreadful idea in almost every circumstance,
-especially when the object has useful properties.
-
-B<Please do not use this library.  You will just regret it later.>
-
-A release of this library in June 2009 promised that deprecation warnings would
-start being issued in June 2010.  It is now December 2012, and the warnings are
-now being issued.  They can be disabled through means made clear from the
-source.
+version 1.666003
 
 =head1 SYNOPSIS
 
@@ -67,7 +138,7 @@ Used with basic function-call interface:
   }
 
 Or, build your Return::Value as an object:
-  
+
   sub build_up_return {
       my $return = failure;
       
@@ -138,9 +209,36 @@ accessed by dereferencing the return value itself.  (See below.)
 
 The most generic attribute of all, prop is a hashref that can be used to pass
 an arbitrary number of data structures, just like the data attribute.  Unlike
-the data attribute, though, these structures must be retrived via method calls.
+the data attribute, though, these structures must be retrieved via method calls.
 
 =back
+
+=head1 NAME
+
+Return::Value - (deprecated) polymorphic return values
+
+=head1 DO NOT USE THIS LIBRARY
+
+Return::Value was a bad idea.  I'm sorry that I had it, sorry that I followed
+through, and sorry that it got used in other useful libraries.  Fortunately
+there are not many things using it.  One of those things is
+L<Email::Send|Email::Send> which is also deprecated in favor of
+L<Email::Sender|Email::Sender>.
+
+There's no reason to specify a new module to replace Return::Value.  In
+general, routines should return values of uniform type or throw exceptions.
+Return::Value tried to be a uniform type for all routines, but has so much
+weird behavior that it ends up being confusing and not very Perl-like.
+
+Objects that are false are just a dreadful idea in almost every circumstance,
+especially when the object has useful properties.
+
+B<Please do not use this library.  You will just regret it later.>
+
+A release of this library in June 2009 promised that deprecation warnings would
+start being issued in June 2010.  It is now December 2012, and the warnings are
+now being issued.  They can be disabled through means made clear from the
+source.
 
 =head1 FUNCTIONS
 
@@ -149,36 +247,6 @@ that are using C<Return::Value> for return values.  It's simple and
 straightforward, and builds the entire return value in one statement.
 
 =over 4
-
-=cut
-
-# This hack probably impacts performance more than I'd like to know, but it's
-# needed to have a hashref object that can deref into a different hash.
-# _ah($self,$key, [$value) sets or returns the value for the given key on the
-# $self blessed-ref
-
-sub _ah {
-    my ($self, $key, $value) = @_;
-    my $class = ref $self;
-    bless $self => "ain't::overloaded";
-    $self->{$key} = $value if @_ > 2;
-    my $return = $self->{$key};
-    bless $self => $class;
-    return $return;
-}
-
-sub _builder {
-    my %args = (type => shift);
-    $args{string} = shift if (@_ % 2);
-    %args = (%args, @_);
-
-    $args{string} = $args{type} unless defined $args{string};
-
-    $args{errno}  = ($args{type} eq 'success' ? undef : 1)
-        unless defined $args{errno};
-
-    __PACKAGE__->new(%args);
-}
 
 =item success
 
@@ -191,22 +259,10 @@ not need to be named.  All other parameters must be passed by name.
  # simplest possible case
  return success;
 
-=cut
-
-sub success { _builder('success', @_) }
-
-=pod
-
 =item failure
 
 C<failure> is identical to C<success>, but returns an object with the type
 "failure"
-
-=cut
-
-sub failure { _builder('failure', @_) }
-
-=pod
 
 =back
 
@@ -229,15 +285,6 @@ The object API is useful in code that is catching C<Return::Value> objects.
 Creates a new C<Return::Value> object.  Named parameters can be used to set the
 object's attributes.
 
-=cut
-
-sub new {
-    my $class = shift;
-    bless { type => 'failure', string => q{}, prop => {}, @_ } => $class;
-}
-
-=pod
-
 =item bool
 
   print "it worked" if $result->bool;
@@ -251,44 +298,13 @@ Returns the result in boolean context: true for success, false for failure.
       unless $result->bool;
 
 Returns the return value's properties. Accepts the name of
-a property retured, or returns the properties hash reference
+a property returned, or returns the properties hash reference
 if given no name.
 
 =item other attribute accessors
 
 Simple accessors exist for the object's other attributes: C<type>, C<errno>,
 C<string>, and C<data>.
-
-=cut
-
-sub bool { _ah($_[0],'type') eq 'success' ? 1 : 0 }
-
-sub type {
-    my ($self, $value) = @_;
-    return _ah($self, 'type') unless @_ > 1;
-    Carp::croak "invalid result type: $value"
-        unless $value eq 'success' or $value eq 'failure';
-    return _ah($self, 'type', $value);
-};
-
-foreach my $name ( qw[errno string data] ) {
-    ## no critic (ProhibitNoStrict)
-    no strict 'refs';
-    *{$name} = sub {
-        my ($self, $value) = @_;
-        return _ah($self, $name) unless @_ > 1;
-        return _ah($self, $name, $value);
-    };
-}
-
-sub prop {
-    my ($self, $name, $value) = @_;
-    return _ah($self, 'prop')          unless $name;
-    return _ah($self, 'prop')->{$name} unless @_ > 2;
-    return _ah($self, 'prop')->{$name} = $value;
-}
-
-=pod
 
 =back
 
@@ -322,42 +338,27 @@ attribute, if it matches that type, or an empty reference otherwise.  You can
 check C<< ref $result->data >> to determine what kind of data (if any) was
 passed.
 
-=cut
-
-use overload
-    '""'   => sub { shift->string  },
-    'bool' => sub { shift->bool },
-    '=='   => sub { shift->bool   == shift },
-    '!='   => sub { shift->bool   != shift },
-    '>'    => sub { shift->bool   >  shift },
-    '<'    => sub { shift->bool   <  shift },
-    'eq'   => sub { shift->string eq shift },
-    'ne'   => sub { shift->string ne shift },
-    'gt'   => sub { shift->string gt shift },
-    'lt'   => sub { shift->string lt shift },
-    '++'   => sub { _ah(shift,'type','success') },
-    '--'   => sub { _ah(shift,'type','failure') },
-    '${}'  => sub { my $data = _ah($_[0],'data'); $data ? \$data : \undef },
-    '%{}'  => sub { ref _ah($_[0],'data') eq 'HASH'  ? _ah($_[0],'data') : {} },
-    '@{}'  => sub { ref _ah($_[0],'data') eq 'ARRAY' ? _ah($_[0],'data') : [] },
-    fallback => 1;
-
-=pod
-
 =back
 
 =head1 AUTHORS
 
-Casey West, <F<casey@geeknest.com>>.
+=over 4
 
-Ricardo Signes, <F<rjbs@cpan.org>>.
+=item *
 
-=head1 COPYRIGHT
+Ricardo SIGNES <rjbs@cpan.org>
 
-  Copyright (c) 2004-2006 Casey West and Ricardo SIGNES.  All rights reserved.
-  This module is free software; you can redistribute it and/or modify it under
-  the same terms as Perl itself.
+=item *
+
+Casey West
+
+=back
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2005 by Casey West.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
 
 =cut
-
-"This return value is true.";

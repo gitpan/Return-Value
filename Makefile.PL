@@ -1,12 +1,74 @@
-use ExtUtils::MakeMaker;
 
-WriteMakefile (
-    AUTHOR        => 'Casey West <casey@geeknest.com>',
-    ABSTRACT      => "Polymorphic Return Values",
-    NAME          => 'Return::Value',
-    LICENSE       => 'perl',
-    PREREQ_PM     => {
-      'Test::More' => '0.47',
-    },
-    VERSION_FROM  => 'lib/Return/Value.pm',
+use strict;
+use warnings;
+
+
+
+use ExtUtils::MakeMaker 6.30;
+
+
+
+my %WriteMakefileArgs = (
+  "ABSTRACT" => "(deprecated) polymorphic return values",
+  "AUTHOR" => "Ricardo SIGNES <rjbs\@cpan.org>, Casey West",
+  "BUILD_REQUIRES" => {},
+  "CONFIGURE_REQUIRES" => {
+    "ExtUtils::MakeMaker" => "6.30"
+  },
+  "DISTNAME" => "Return-Value",
+  "EXE_FILES" => [],
+  "LICENSE" => "perl",
+  "NAME" => "Return::Value",
+  "PREREQ_PM" => {
+    "Carp" => 0,
+    "Exporter" => "5.57",
+    "overload" => 0,
+    "strict" => 0,
+    "warnings" => 0
+  },
+  "TEST_REQUIRES" => {
+    "File::Spec" => 0,
+    "IO::Handle" => 0,
+    "IPC::Open3" => 0,
+    "Test::More" => "0.96"
+  },
+  "VERSION" => "1.666003",
+  "test" => {
+    "TESTS" => "t/*.t"
+  }
 );
+
+
+unless ( eval { ExtUtils::MakeMaker->VERSION(6.63_03) } ) {
+  my $tr = delete $WriteMakefileArgs{TEST_REQUIRES};
+  my $br = $WriteMakefileArgs{BUILD_REQUIRES};
+  for my $mod ( keys %$tr ) {
+    if ( exists $br->{$mod} ) {
+      $br->{$mod} = $tr->{$mod} if $tr->{$mod} > $br->{$mod};
+    }
+    else {
+      $br->{$mod} = $tr->{$mod};
+    }
+  }
+}
+
+unless ( eval { ExtUtils::MakeMaker->VERSION(6.56) } ) {
+  my $br = delete $WriteMakefileArgs{BUILD_REQUIRES};
+  my $pp = $WriteMakefileArgs{PREREQ_PM};
+  for my $mod ( keys %$br ) {
+    if ( exists $pp->{$mod} ) {
+      $pp->{$mod} = $br->{$mod} if $br->{$mod} > $pp->{$mod};
+    }
+    else {
+      $pp->{$mod} = $br->{$mod};
+    }
+  }
+}
+
+delete $WriteMakefileArgs{CONFIGURE_REQUIRES}
+  unless eval { ExtUtils::MakeMaker->VERSION(6.52) };
+
+WriteMakefile(%WriteMakefileArgs);
+
+
+

@@ -1,5 +1,11 @@
 Release history for Return-Value
 
+1.666003  2013-10-15 22:08:36 America/New_York
+          removed warning;  I wash my hands of this
+          library forever -- rjbs, 2013-10-15
+
+          typo fixes; thanks, David Steinbrunner!
+
 1.666002  2012-12-24
           finally started issuing long-promised warnings
 
