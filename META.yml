@@ -4,9 +4,6 @@ author:
   - 'Ricardo SIGNES <rjbs@cpan.org>'
   - 'Casey West'
 build_requires:
-  File::Spec: 0
-  IO::Handle: 0
-  IPC::Open3: 0
   Test::More: 0.96
 configure_requires:
   ExtUtils::MakeMaker: 6.30
@@ -27,7 +24,7 @@ resources:
   bugtracker: https://github.com/rjbs/Return-Value/issues
   homepage: https://github.com/rjbs/Return-Value
   repository: https://github.com/rjbs/Return-Value.git
-version: 1.666003
+version: 1.666004
 x_Dist_Zilla:
   perl:
     version: 5.019004
@@ -35,7 +32,7 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::Git::GatherDir
       name: '@RJBS/Git::GatherDir'
-      version: 2.014
+      version: 2.016
     -
       class: Dist::Zilla::Plugin::CheckPrereqsIndexed
       name: '@RJBS/CheckPrereqsIndexed'
@@ -43,7 +40,7 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::CheckExtraTests
       name: '@RJBS/CheckExtraTests'
-      version: 0.011
+      version: 0.013
     -
       class: Dist::Zilla::Plugin::PromptIfStale
       name: '@RJBS/RJBS-Outdated'
@@ -107,7 +104,7 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::Git::NextVersion
       name: '@RJBS/Git::NextVersion'
-      version: 2.014
+      version: 2.016
     -
       class: Dist::Zilla::Plugin::PkgVersion
       name: '@RJBS/PkgVersion'
@@ -137,17 +134,6 @@ x_Dist_Zilla:
       name: '@RJBS/ReportVersions::Tiny'
       version: 1.10
     -
-      class: Dist::Zilla::Plugin::Test::Compile
-      config:
-        Dist::Zilla::Plugin::Test::Compile:
-          filename: t/00-compile.t
-          module_finder:
-            - ':InstallModules'
-          script_finder:
-            - ':ExecFiles'
-      name: '@RJBS/Test::Compile'
-      version: 2.036
-    -
       class: Dist::Zilla::Plugin::Prereqs
       config:
         Dist::Zilla::Plugin::Prereqs:
@@ -172,19 +158,19 @@ x_Dist_Zilla:
     -
       class: Dist::Zilla::Plugin::Git::Check
       name: '@RJBS/@Git/Check'
-      version: 2.014
+      version: 2.016
     -
       class: Dist::Zilla::Plugin::Git::Commit
       name: '@RJBS/@Git/Commit'
-      version: 2.014
+      version: 2.016
     -
       class: Dist::Zilla::Plugin::Git::Tag
       name: '@RJBS/@Git/Tag'
-      version: 2.014
+      version: 2.016
     -
       class: Dist::Zilla::Plugin::Git::Push
       name: '@RJBS/@Git/Push'
-      version: 2.014
+      version: 2.016
     -
       class: Dist::Zilla::Plugin::FinderCode
       name: ':InstallModules'

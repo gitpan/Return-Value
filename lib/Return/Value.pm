@@ -2,8 +2,9 @@ use strict;
 use warnings;
 package Return::Value;
 {
-  $Return::Value::VERSION = '1.666003';
+  $Return::Value::VERSION = '1.666004';
 }
+# ABSTRACT: (deprecated) polymorphic return values
 # vi:et:sw=4 ts=4
 
 use Exporter 5.57 'import';
@@ -108,11 +109,11 @@ __END__
 
 =head1 NAME
 
-Return::Value
+Return::Value - (deprecated) polymorphic return values
 
 =head1 VERSION
 
-version 1.666003
+version 1.666004
 
 =head1 SYNOPSIS
 
@@ -212,10 +213,6 @@ an arbitrary number of data structures, just like the data attribute.  Unlike
 the data attribute, though, these structures must be retrieved via method calls.
 
 =back
-
-=head1 NAME
-
-Return::Value - (deprecated) polymorphic return values
 
 =head1 DO NOT USE THIS LIBRARY
 
